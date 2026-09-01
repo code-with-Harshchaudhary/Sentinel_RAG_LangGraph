@@ -1,1 +1,6 @@
 *.tar.gz
+
+# Secret environment file
+.env
+.env.*
+!.env.example
