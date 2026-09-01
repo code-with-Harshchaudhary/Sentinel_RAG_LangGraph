@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title description">
+  <title id="title">Sentinel RAG Ops</title>
+  <desc id="description">A shield enclosing connected knowledge nodes</desc>
+  <defs>
+    <linearGradient id="shield" x1="10" y1="6" x2="54" y2="58" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#34d399"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#shield)" d="M32 3 55 11v18c0 14.4-8.8 25.6-23 32C17.8 54.6 9 43.4 9 29V11L32 3Z"/>
+  <path fill="#052e2b" fill-opacity=".28" d="M32 9 49 15v14c0 10.6-5.8 19.3-17 25-11.2-5.7-17-14.4-17-25V15l17-6Z"/>
+  <g stroke="#ecfdf5" stroke-width="3" stroke-linecap="round">
+    <path d="m23 25 9-6 9 7M23 25l3 13m15-12-3 12M26 38h12"/>
+  </g>
+  <g fill="#ecfdf5">
+    <circle cx="32" cy="19" r="4"/>
+    <circle cx="23" cy="25" r="4"/>
+    <circle cx="41" cy="26" r="4"/>
+    <circle cx="26" cy="38" r="4"/>
+    <circle cx="38" cy="38" r="4"/>
+  </g>
+</svg>

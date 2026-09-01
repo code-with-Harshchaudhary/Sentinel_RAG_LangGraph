@@ -1,0 +1,345 @@
+/* Scoped macOS physicality layer: complements the existing desktop rather than replacing it. */
+:root {
+  --mac-spring: cubic-bezier(.18, .89, .32, 1.18);
+  --mac-settle: cubic-bezier(.2, .72, .24, 1);
+  --mac-glass: rgba(247, 251, 255, .48);
+  --mac-glass-line: rgba(255, 255, 255, .58);
+  --mac-ink: rgba(19, 29, 43, .88);
+  --mac-shadow: 0 20px 54px rgba(20, 45, 76, .20), 0 2px 8px rgba(20, 45, 76, .12);
+}
+
+/* The three legacy edge awards are retired from the desktop. */
+#awards-stack {
+  display: none !important;
+}
+
+/* Existing dialogs become one coherent layered window system. */
+[role="dialog"].macos-window {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(12px) scale(.975);
+  transform-origin: 50% 44%;
+  transition: opacity 180ms ease, transform 300ms var(--mac-spring), filter 180ms ease;
+  will-change: transform, opacity;
+}
+[role="dialog"].macos-window.macos-window-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0) scale(1);
+}
+[role="dialog"].macos-window.macos-window-active {
+  filter: saturate(1.03);
+}
+[role="dialog"].macos-window.macos-window-closing {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px) scale(.982);
+  transition-duration: 145ms;
+}
+.macos-floating-window {
+  will-change: transform, left, top;
+  touch-action: none;
+}
+.macos-window-titlebar {
+  cursor: grab !important;
+  user-select: none;
+}
+.macos-window-titlebar.macos-window-dragging { cursor: grabbing !important; }
+
+/* Preserve the dock composition; make proximity motion transform-only and restrained. */
+#dock {
+  isolation: isolate;
+  padding: 9px 12px 10px;
+  border: 1px solid rgba(255, 255, 255, .56);
+  background: linear-gradient(150deg, rgba(255,255,255,.54), rgba(227,240,252,.34));
+  box-shadow: 0 18px 42px rgba(22, 54, 83, .20), inset 0 1px 1px rgba(255,255,255,.78), inset 0 -1px 1px rgba(255,255,255,.26);
+  backdrop-filter: blur(24px) saturate(145%);
+  -webkit-backdrop-filter: blur(24px) saturate(145%);
+}
+#dock .di {
+  position: relative;
+  margin: 0 !important;
+  border-radius: 15px;
+  outline: none;
+}
+#dock .di-icon {
+  transform-origin: 50% 100%;
+  transition: transform 220ms var(--mac-spring), filter 160ms ease;
+  will-change: transform;
+}
+#dock .di:hover .di-icon,
+#dock .di:focus-visible .di-icon { filter: brightness(1.04) saturate(1.05); }
+#dock .di:focus-visible::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border: 2px solid rgba(255,255,255,.92);
+  border-radius: 18px;
+  box-shadow: 0 0 0 3px rgba(10,132,255,.72);
+  pointer-events: none;
+}
+#dock .di.macos-dock-active .di-dot {
+  opacity: 1 !important;
+  transform: scale(1) !important;
+  background: #0a84ff !important;
+  box-shadow: 0 0 0 2px rgba(255,255,255,.48), 0 0 9px rgba(10,132,255,.68);
+}
+
+/* Desktop launchers remain the existing artwork, but gain native input feedback. */
+.node.macos-launcher {
+  outline: none;
+  border-radius: 16px;
+  transition: filter 160ms ease, transform 220ms var(--mac-spring);
+}
+.node.macos-launcher:hover { filter: brightness(1.045) saturate(1.03); }
+.node.macos-launcher:active { transform: scale(.975); }
+.node.macos-launcher:focus-visible::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border: 2px solid rgba(255,255,255,.92);
+  border-radius: 18px;
+  box-shadow: 0 0 0 3px rgba(10,132,255,.82), 0 8px 22px rgba(18, 66, 108, .24);
+  pointer-events: none;
+}
+
+/* Existing widgets keep their content but acquire a subtler, object-like material response. */
+.widget {
+  box-shadow: 0 14px 34px rgba(25, 50, 79, .16), inset 0 1px 0 rgba(255,255,255,.58) !important;
+  transition: transform 220ms var(--mac-spring), box-shadow 220ms ease, background 220ms ease, border-color 220ms ease !important;
+}
+.widget:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 20px 42px rgba(25, 50, 79, .20), inset 0 1px 0 rgba(255,255,255,.72) !important;
+}
+
+/* One calm desktop group: a double-width map plus matching photo and clock tiles. */
+#apple-widget-stack {
+  --apple-tile-width: 138px;
+  --apple-tile-height: 122px;
+  --apple-widget-gap: 10px;
+  position: fixed;
+  z-index: 65;
+  left: 18px;
+  bottom: 128px;
+  display: grid;
+  grid-template-columns: repeat(2, var(--apple-tile-width));
+  grid-template-rows: repeat(2, var(--apple-tile-height));
+  gap: var(--apple-widget-gap);
+  align-items: stretch;
+  pointer-events: auto;
+}
+.apple-object {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--mac-glass-line);
+  border-radius: 24px;
+  corner-shape: squircle;
+  color: var(--mac-ink);
+  background: linear-gradient(145deg, rgba(255,255,255,.58), rgba(219,238,255,.34));
+  box-shadow: var(--mac-shadow), inset 0 1px 0 rgba(255,255,255,.78);
+  backdrop-filter: blur(20px) saturate(145%);
+  -webkit-backdrop-filter: blur(20px) saturate(145%);
+  transition: transform 260ms var(--mac-spring), box-shadow 220ms ease, border-color 220ms ease;
+}
+.apple-object:hover,
+.apple-object:focus-within {
+  transform: translateY(-3px) scale(1.012);
+  border-color: rgba(255,255,255,.80);
+  box-shadow: 0 24px 48px rgba(20, 49, 80, .23), inset 0 1px 0 rgba(255,255,255,.84);
+}
+.apple-object button {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  appearance: none;
+  border: 0;
+  padding: 12px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.apple-object button:focus-visible { outline: 3px solid rgba(10,132,255,.88); outline-offset: -3px; }
+.apple-object .apple-widget-kicker {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-bottom: 7px;
+  font: 600 8px/1 "Space Grotesk", system-ui, sans-serif;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  opacity: .67;
+}
+.apple-object .apple-widget-title {
+  position: relative;
+  z-index: 1;
+  display: block;
+  font: 600 14px/1.08 -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+  letter-spacing: -.025em;
+}
+.apple-object .apple-widget-detail {
+  position: relative;
+  z-index: 1;
+  display: block;
+  margin-top: 5px;
+  font: 500 9px/1.25 "Space Grotesk", system-ui, sans-serif;
+  opacity: .68;
+}
+#map-widget::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(6,16,20,.78) 0%, rgba(6,16,20,.48) 48%, rgba(6,16,20,.08) 76%);
+}
+#map-widget {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  background: #233a36;
+}
+#map-widget > img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 43%;
+  filter: saturate(.82) contrast(1.04) brightness(.84);
+  transform: scale(1.01);
+  transition: transform 440ms var(--mac-spring), filter 220ms ease;
+}
+#map-widget button {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0,0,0,.68);
+}
+#map-widget:hover > img,
+#map-widget.is-selected > img {
+  transform: scale(1.055);
+  filter: saturate(.94) contrast(1.06) brightness(.9);
+}
+#photo-widget {
+  grid-column: 1;
+  grid-row: 2;
+}
+#map-widget .map-pin {
+  position: absolute;
+  z-index: 3;
+  right: 18px;
+  bottom: 17px;
+  width: 18px;
+  height: 18px;
+  border: 5px solid #ff453a;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 5px 10px rgba(153,44,37,.30);
+  transform: rotate(-45deg);
+  transition: transform 280ms var(--mac-spring);
+}
+#map-widget.is-selected .map-pin { transform: rotate(-45deg) translate(1px,-5px) scale(1.08); }
+#photo-widget img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 22%;
+  filter: saturate(.88) contrast(.98);
+  transition: transform 440ms var(--mac-spring), filter 220ms ease;
+}
+#photo-widget::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 28%, rgba(11, 27, 43, .56));
+  pointer-events: none;
+}
+#photo-widget button { display: flex; flex-direction: column; justify-content: flex-end; color: white; text-shadow: 0 1px 8px rgba(0,0,0,.36); }
+#photo-widget:hover img,
+#photo-widget.is-selected img { transform: scale(1.07); filter: saturate(1) contrast(1.02); }
+#photo-widget .apple-widget-kicker,
+#photo-widget .apple-widget-title { opacity: 1; }
+
+#clock-widget {
+  grid-column: 2;
+  grid-row: 2;
+  color: #090a0c;
+  background: rgba(250, 251, 252, .96);
+}
+#clock-widget::before {
+  content: "";
+  position: absolute;
+  inset: 9px;
+  border-radius: 18px;
+  corner-shape: squircle;
+  background: repeating-conic-gradient(from -1deg, rgba(10,10,12,.72) 0 1.5deg, transparent 1.5deg 6deg);
+  opacity: .72;
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 5px), #000 calc(100% - 4px));
+}
+#clock-widget .clock-face {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  min-height: 0;
+  padding: 17px 10px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+}
+#clock-widget .clock-time {
+  font-size: 31px;
+  line-height: .96;
+  font-weight: 700;
+  letter-spacing: -.075em;
+  font-variant-numeric: tabular-nums;
+}
+#clock-widget .clock-date {
+  margin-top: 7px;
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .54;
+}
+
+@media (max-width: 1024px) {
+  #apple-widget-stack {
+    position: static;
+    --apple-tile-width: auto;
+    --apple-tile-height: 122px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, var(--apple-tile-height));
+    width: 100%;
+    margin: 6px 0 0;
+  }
+  .apple-object { border-radius: 22px; }
+  [role="dialog"].macos-window { transform-origin: 50% 50%; }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .apple-object {
+    background: rgba(241, 247, 253, .96);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  #clock-widget { background: #fafbfc; }
+}
+
+body.motion-reduced *,
+body.motion-reduced *::before,
+body.motion-reduced *::after {
+  scroll-behavior: auto !important;
+  transition-duration: .01ms !important;
+  animation-duration: .01ms !important;
+  animation-iteration-count: 1 !important;
+}

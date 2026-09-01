@@ -1,0 +1,36 @@
+[
+  {
+    "slug": "langfuse-rag-ops",
+    "title": "Langfuse for Graph-RAG Operations",
+    "subtitle": "A Traceable Evaluation Blueprint for Sentinel RAG Ops",
+    "type": "Research design paper",
+    "date": "2026-09-01",
+    "pages": 12,
+    "description": "A research-style blueprint for adding Langfuse observability and evaluation to a graph-and-vector RAG system: trace contracts, offline and online evaluation, operational metrics, privacy controls, and an evidence-based implementation roadmap.",
+    "topics": ["Langfuse", "RAGOps", "Observability", "Evaluation"],
+    "highlights": [
+      "A proposed trace schema for ingestion, retrieval, generation, and evaluation",
+      "A controlled experiment protocol covering retrieval, grounding, latency, cost, and reliability",
+      "Privacy-aware telemetry boundaries and an honest implementation roadmap"
+    ],
+    "pdf": "/papers/files/langfuse-rag-ops.pdf",
+    "editable": "/papers/files/langfuse-rag-ops.docx"
+  },
+  {
+    "slug": "sentinel-rag-ops",
+    "title": "Sentinel RAG Ops",
+    "subtitle": "From Documents to Connected Knowledge",
+    "type": "Technical case study",
+    "date": "2026-08-30",
+    "pages": 12,
+    "description": "Inside a graph-based RAG application: document ingestion, Gemini model integration, knowledge-graph retrieval, and the practical work of diagnosing provider and quota failures.",
+    "topics": ["RAG", "Knowledge graphs", "Gemini", "FastAPI"],
+    "highlights": [
+      "System architecture and the document-to-knowledge pipeline",
+      "Recorded local results, troubleshooting, and limitations",
+      "Privacy considerations and a roadmap for further evaluation"
+    ],
+    "pdf": "/papers/files/sentinel-rag-ops.pdf",
+    "editable": "/papers/files/sentinel-rag-ops.docx"
+  }
+]

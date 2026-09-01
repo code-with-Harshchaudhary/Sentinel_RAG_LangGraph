@@ -1,0 +1,3 @@
+recursive-include lightrag/api/webui *
+recursive-include lightrag/api/static *
+recursive-include prompts/samples *

@@ -1,0 +1,15 @@
+{
+  "intended_pages": 12,
+  "section_count": 11,
+  "word_count": 2526,
+  "preset": "standard_business_brief",
+  "header_pattern": "editorial_cover",
+  "claim_status": "proposed Langfuse research design; no benchmark results",
+  "named_overrides": [
+    "cover-title-30pt-navy",
+    "teal-kicker",
+    "9.25pt-table-text",
+    "8.5pt-code",
+    "8.7pt-references"
+  ]
+}

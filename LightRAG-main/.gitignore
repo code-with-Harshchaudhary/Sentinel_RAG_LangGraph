@@ -1,0 +1,63 @@
+# Secrets and local environment
+.env
+.env.*
+!.env.example
+!lightrag_webui/.env.development
+*.pem
+*.key
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+site/
+
+# Test, lint, and tool caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+.cache/
+
+# Frontend
+lightrag_webui/node_modules/
+lightrag/api/webui/
+
+# Runtime state and generated content
+data/inputs/*
+data/rag_storage/*
+data/prompts/*
+!data/inputs/.gitkeep
+!data/rag_storage/.gitkeep
+!data/prompts/.gitkeep
+inputs/
+rag_storage/
+output/
+parse_output/
+*.log
+*.log.*
+
+# Local compose/setup output
+docker-compose.final.yml
+.apple-container.env
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
