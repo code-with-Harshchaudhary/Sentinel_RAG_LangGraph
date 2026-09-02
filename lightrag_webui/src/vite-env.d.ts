@@ -29,6 +29,12 @@ interface ImportMetaEnv {
   /** Browser-visible API prefix to simulate in dev. Must match the backend's
    *  `LIGHTRAG_API_PREFIX` if a real prefixed backend is being proxied to. */
   readonly VITE_DEV_API_PREFIX?: string
+
+  /* ───────────── Supabase ───────────── */
+  /** Supabase Project URL */
+  readonly VITE_SUPABASE_URL?: string
+  /** Supabase Publishable / Anon Key */
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY?: string
 }
 
 interface ImportMeta {
