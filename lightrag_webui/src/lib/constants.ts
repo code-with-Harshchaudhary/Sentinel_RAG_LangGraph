@@ -94,7 +94,7 @@ export const supportedFileTypes = {
 }
 
 export const SiteInfo = {
-  name: 'Sentinel RAG Ops',
+  name: 'Sentry RAG Ops',
   home: '/'
 }
 

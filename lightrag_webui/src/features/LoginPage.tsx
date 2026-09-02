@@ -152,10 +152,10 @@ const LoginPage = () => {
         <CardHeader className="flex items-center justify-center space-y-2 pb-8 pt-6">
           <div className="flex flex-col items-center space-y-4">
             <div className="flex items-center gap-3">
-              <img src="logo.svg" alt="Sentinel RAG Ops logo" className="h-14 w-14" />
+              <img src="logo.svg" alt="Sentry RAG Ops logo" className="h-14 w-14" />
             </div>
             <div className="text-center space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight">Sentinel RAG Ops</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Sentry RAG Ops</h1>
               <p className="text-muted-foreground text-sm">
                 {t('login.description')}
               </p>

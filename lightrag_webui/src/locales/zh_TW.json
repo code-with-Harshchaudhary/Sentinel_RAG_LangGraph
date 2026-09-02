@@ -207,7 +207,7 @@
     "fetchRetriesExhausted": "載入圖資料失敗。請重新整理後再試。",
     "graphBuildFailed": "圖資料渲染失敗。請重新整理後再試。",
     "statusDialog": {
-      "title": "Sentinel RAG Ops 伺服器設定",
+      "title": "Sentry RAG Ops 伺服器設定",
       "description": "查看目前系統狀態和連線資訊"
     },
     "legend": "圖例",

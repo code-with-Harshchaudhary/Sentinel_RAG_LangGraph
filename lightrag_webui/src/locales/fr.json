@@ -207,7 +207,7 @@
     "fetchRetriesExhausted": "Échec du chargement des données du graphe. Utilisez l'actualisation pour réessayer.",
     "graphBuildFailed": "Échec du rendu des données du graphe. Utilisez l'actualisation pour réessayer.",
     "statusDialog": {
-      "title": "Paramètres du Serveur Sentinel RAG Ops",
+      "title": "Paramètres du Serveur Sentry RAG Ops",
       "description": "Afficher l'état actuel du système et les informations de connexion"
     },
     "legend": "Légende",

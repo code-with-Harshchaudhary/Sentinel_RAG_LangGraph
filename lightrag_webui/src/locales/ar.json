@@ -207,7 +207,7 @@
     "fetchRetriesExhausted": "فشل تحميل بيانات الرسم البياني. استخدم التحديث للمحاولة مرة أخرى.",
     "graphBuildFailed": "فشل عرض بيانات الرسم البياني. استخدم التحديث لإعادة المحاولة.",
     "statusDialog": {
-      "title": "إعدادات خادم Sentinel RAG Ops",
+      "title": "إعدادات خادم Sentry RAG Ops",
       "description": "عرض حالة النظام الحالية ومعلومات الاتصال"
     },
     "legend": "المفتاح",

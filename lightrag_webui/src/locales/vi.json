@@ -207,7 +207,7 @@
     "fetchRetriesExhausted": "Không tải được dữ liệu đồ thị. Hãy làm mới để thử lại.",
     "graphBuildFailed": "Không hiển thị được dữ liệu đồ thị. Hãy làm mới để thử lại.",
     "statusDialog": {
-      "title": "Cài Đặt Máy Chủ Sentinel RAG Ops",
+      "title": "Cài Đặt Máy Chủ Sentry RAG Ops",
       "description": "Xem trạng thái hệ thống hiện tại và thông tin kết nối"
     },
     "legend": "Chú thích",

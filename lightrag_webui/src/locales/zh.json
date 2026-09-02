@@ -207,7 +207,7 @@
     "fetchRetriesExhausted": "加载图数据失败。请刷新后重试。",
     "graphBuildFailed": "渲染图数据失败。请刷新后重试。",
     "statusDialog": {
-      "title": "Sentinel RAG Ops 服务器设置",
+      "title": "Sentry RAG Ops 服务器设置",
       "description": "查看当前系统状态和连接信息"
     },
     "legend": "图例",

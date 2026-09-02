@@ -83,7 +83,7 @@ export default function SiteHeader() {
           <ShieldCheckIcon className="size-4 text-emerald-500" aria-hidden="true" />
           <span className="font-bold md:inline-block">{SiteInfo.name}</span>
         </a>
-        {webuiTitle && (
+        {webuiTitle && webuiTitle !== SiteInfo.name && (
           <div className="flex items-center">
             <span className="mx-1 text-xs text-gray-500 dark:text-gray-400">|</span>
             <TooltipProvider>

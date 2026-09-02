@@ -207,7 +207,7 @@
     "fetchRetriesExhausted": "グラフデータの読み込みに失敗しました。更新して再試行してください。",
     "graphBuildFailed": "グラフデータの描画に失敗しました。更新して再試行してください。",
     "statusDialog": {
-      "title": "Sentinel RAG Opsサーバー設定",
+      "title": "Sentry RAG Opsサーバー設定",
       "description": "現在のシステムステータスと接続情報を表示"
     },
     "legend": "凡例",
