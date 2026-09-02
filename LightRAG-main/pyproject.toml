@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "sentinel-rag-ops"
 dynamic = ["version"]
 authors = [
-    {name = "PROJECT_OWNER"}
+    {name = "Harsh Singh"}
 ]
 description = "Production-ready graph and vector retrieval operations platform"
 readme = "README.md"
@@ -202,10 +202,10 @@ sentinel-rag-clean-cache = "lightrag.tools.clean_llm_query_cache:main"
 sentinel-rag-rebuild-vdb = "lightrag.tools.rebuild_vdb:main"
 
 [project.urls]
-Homepage = "https://github.com/YOUR_GITHUB_USERNAME/sentinel-rag-ops"
-Documentation = "https://github.com/YOUR_GITHUB_USERNAME/sentinel-rag-ops#readme"
-Repository = "https://github.com/YOUR_GITHUB_USERNAME/sentinel-rag-ops"
-"Bug Tracker" = "https://github.com/YOUR_GITHUB_USERNAME/sentinel-rag-ops/issues"
+Homepage = "https://github.com/code-with-Harshchaudhary/Sentinel_RAG_LangGraph"
+Documentation = "https://github.com/code-with-Harshchaudhary/Sentinel_RAG_LangGraph#readme"
+Repository = "https://github.com/code-with-Harshchaudhary/Sentinel_RAG_LangGraph"
+"Bug Tracker" = "https://github.com/code-with-Harshchaudhary/Sentinel_RAG_LangGraph/issues"
 
 [tool.setuptools.packages.find]
 include = ["lightrag*"]

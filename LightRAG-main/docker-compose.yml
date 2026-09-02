@@ -1,11 +1,11 @@
 services:
   sentinel-rag-ops:
-    image: ghcr.io/YOUR_GITHUB_USERNAME/sentinel-rag-ops:latest
+    image: ghcr.io/code-with-harshchaudhary/sentinel-rag-ops:latest
     build:
       context: .
       dockerfile: Dockerfile
       tags:
-        - ghcr.io/YOUR_GITHUB_USERNAME/sentinel-rag-ops:latest
+        - ghcr.io/code-with-harshchaudhary/sentinel-rag-ops:latest
     ports:
       - "${HOST:-0.0.0.0}:${PORT:-9621}:9621"
     volumes:

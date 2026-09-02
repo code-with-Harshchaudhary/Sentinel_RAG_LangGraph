@@ -102,7 +102,7 @@ credentials named by their markers.
 
 ## Docker deployment
 
-1. Replace `YOUR_GITHUB_USERNAME` in `docker-compose.yml` if you intend to push an image.
+1. The Compose image is configured for this project's GitHub Container Registry namespace.
 2. Copy `.env.example` to `.env` and add production credentials.
 3. Set `LIGHTRAG_API_KEY` or `AUTH_ACCOUNTS` plus `TOKEN_SECRET` before exposing the service.
 4. Start the stack:

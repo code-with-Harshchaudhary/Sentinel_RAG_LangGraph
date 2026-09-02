@@ -1,0 +1,46 @@
+name: Sentinel RAG Ops CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "LightRAG-main/**"
+      - ".github/workflows/ci.yml"
+      - "README.md"
+  pull_request:
+    paths:
+      - "LightRAG-main/**"
+      - ".github/workflows/ci.yml"
+      - "README.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: LightRAG-main/lightrag_webui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bun run lint
+      - run: bun run test
+      - run: bun run build
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: LightRAG-main
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --frozen --extra api --extra pytest
+      - run: uv run ruff check lightrag tests
+      - run: uv run --no-sync pytest tests/ -m offline --tb=short

@@ -1,6 +1,24 @@
 *.tar.gz
 
-# Secret environment file
+# Secrets
 .env
 .env.*
 !.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# JavaScript
+node_modules/
+.vite/
+
+# Local application data
+data/
+LightRAG-main/data/
+
+# Generated local reports and logs
+*.log
