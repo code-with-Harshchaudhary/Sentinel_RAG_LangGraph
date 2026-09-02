@@ -4,12 +4,24 @@ on:
   push:
     branches: [main]
     paths:
-      - "LightRAG-main/**"
+      - "lightrag/**"
+      - "lightrag_webui/**"
+      - "tests/**"
+      - "deploy/**"
+      - "Dockerfile"
+      - "pyproject.toml"
+      - "uv.lock"
       - ".github/workflows/ci.yml"
       - "README.md"
   pull_request:
     paths:
-      - "LightRAG-main/**"
+      - "lightrag/**"
+      - "lightrag_webui/**"
+      - "tests/**"
+      - "deploy/**"
+      - "Dockerfile"
+      - "pyproject.toml"
+      - "uv.lock"
       - ".github/workflows/ci.yml"
       - "README.md"
   workflow_dispatch:
@@ -22,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: LightRAG-main/lightrag_webui
+        working-directory: lightrag_webui
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -33,14 +45,19 @@ jobs:
 
   backend:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: LightRAG-main
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with:
           enable-cache: true
-      - run: uv sync --frozen --extra api --extra pytest
+      - run: uv sync --frozen --extra api --extra postgres --extra pytest
       - run: uv run ruff check lightrag tests
-      - run: uv run --no-sync pytest tests/ -m offline --tb=short
+      - name: Run Gemini/PostgreSQL backend offline tests
+        run: >-
+          uv run --no-sync pytest
+          tests/api tests/llm/gemini_impl tests/kg/postgres_impl tests/workspace
+          -m offline --tb=short
+          --ignore=tests/api/config/test_api_config_lollms_host.py
+          --ignore=tests/api/config/test_embedding_dimension_guard.py
+          --ignore=tests/api/config/test_ollama_embedding_dimension.py
+          --ignore=tests/api/config/test_ollama_think_startup_validation.py

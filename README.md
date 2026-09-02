@@ -1,75 +1,127 @@
 # Sentinel RAG Ops
 
-Sentinel RAG Ops is a document knowledge platform for graph and vector retrieval. It combines a FastAPI service with a React console for document ingestion, processing status, knowledge graph exploration, and evidence-backed queries.
+Sentinel RAG Ops is Harsh Singh's document intelligence and retrieval operations platform. It uploads and parses documents, builds vector and knowledge graph indexes, and exposes search, graph exploration, and operational controls through a FastAPI backend and React console.
 
-The application is built on the LightRAG engine. The compatible `lightrag` Python namespace and required upstream legal notices are retained.
+## Features
 
-## Technology
+- Gemini generation and embeddings with one `GEMINI_API_KEY`
+- Document upload, scan, status, retry, and deletion workflows
+- PDF, DOCX, PPTX, XLSX, Markdown, text, and other common formats
+- Vector retrieval plus graph-based local, global, hybrid, naive, and mix modes
+- API-key protection for public deployments
+- Local file storage for development
+- Supabase PostgreSQL for RAG state and private Supabase Storage for source documents
+- Vercel frontend and Render Docker backend configuration
 
-- Python 3.10+ and FastAPI
-- React 19, TypeScript, Vite, and Bun
-- Graph and vector retrieval with pluggable storage backends
-- OpenAI, Gemini, Ollama, and other supported model providers
-- Docker Compose for local or server deployment
+The internal `lightrag` Python namespace and `LIGHTRAG_*` environment variables remain for compatibility with the underlying engine. Required upstream copyright and dependency notices are retained in [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## Repository layout
+## Architecture
 
-- [Application](LightRAG-main/) — backend, WebUI, tests, Docker configuration, and technical documentation
-- [Technical case study](portfolio-report/Sentinel_RAG_Ops_Portfolio_Report.md) — verified architecture and engineering report
-- [Observability research](langfuse-rag-ops-paper/Langfuse_RAG_Ops_Research_Paper.md) — proposed Langfuse tracing and evaluation design
-- [Third-party notices](LightRAG-main/THIRD_PARTY_NOTICES.md) — preserved licenses and attribution
-
-## Run with Docker
-
-Install Docker Desktop, then run these commands from the repository root:
-
-```powershell
-Set-Location .\LightRAG-main
-Copy-Item .env.example .env
+```text
+Browser
+  |-- local: React dev server (5173) -> FastAPI (9621)
+  `-- cloud: Vercel -> Render FastAPI -> Gemini
+                                    |-> Supabase PostgreSQL
+                                    `-> private Supabase Storage
 ```
 
-Edit `LightRAG-main/.env` and replace the provider and security placeholders. At minimum, configure an LLM provider, an embedding provider, and either `LIGHTRAG_API_KEY` or account authentication.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the detailed request and storage flow.
 
-Start the application:
+## Run locally
+
+Requirements: Python 3.12, [uv](https://docs.astral.sh/uv/), [Bun](https://bun.sh/), and a Gemini API key.
+
+In PowerShell from the repository root:
+
+```powershell
+Copy-Item .env.example .env
+notepad .env
+uv sync --extra api --extra postgres --extra pytest
+Set-Location lightrag_webui
+bun install --frozen-lockfile
+bun run dev
+```
+
+Put your real key in `.env` as `GEMINI_API_KEY=...`. Keep the frontend terminal open. In a second terminal, run:
+
+```powershell
+Set-Location C:\Project_main\Sentinel-RAG-Ops
+uv run sentinel-rag-server --host 127.0.0.1 --port 9621
+```
+
+Open [http://localhost:5173](http://localhost:5173). When prompted, enter the `LIGHTRAG_API_KEY` value from your local `.env`.
+
+### One-command Docker run
+
+After creating `.env`:
 
 ```powershell
 docker compose up --build -d
-docker compose ps
+docker compose logs -f sentinel-rag-ops
 ```
 
-Open <http://127.0.0.1:9621/webui/>. Follow logs with `docker compose logs -f sentinel-rag-ops`, and stop the stack with `docker compose down`.
+Open [http://localhost:9621/webui/](http://localhost:9621/webui/). Stop it with `docker compose down`.
 
-## Run for development
+## Deploy free portfolio hosting
 
-Install [uv](https://docs.astral.sh/uv/) and [Bun](https://bun.sh/), then:
+The supported split deployment is:
 
-```powershell
-Set-Location .\LightRAG-main
-Copy-Item .env.example .env
-uv sync --extra api --extra offline-storage --extra offline-llm --extra pytest
-Set-Location .\lightrag_webui
-bun install --frozen-lockfile
-bun run build
-Set-Location ..
-uv run sentinel-rag-server
-```
+- **Vercel:** static React console
+- **Render:** Dockerized FastAPI API and processing worker
+- **Supabase:** PostgreSQL with pgvector plus private source-document storage
 
-The WebUI is served at <http://127.0.0.1:9621/webui/>. Development and provider-specific details are in the [application guide](LightRAG-main/README.md).
+Follow [docs/VERCEL_SUPABASE_DEPLOYMENT.md](docs/VERCEL_SUPABASE_DEPLOYMENT.md). All required templates are already included:
 
-## Validation
+- `render.yaml`
+- `lightrag_webui/vercel.json`
+- `.env.supabase.example`
+- `deploy/supabase/bootstrap.sql`
 
-From `LightRAG-main`:
+Free Render services sleep when idle and have limited memory, so cold starts and large documents can be slow. This setup is suitable for a portfolio or small demonstration; production traffic should use a paid instance.
+
+## Quality checks
 
 ```powershell
 uv run ruff check lightrag tests
-Set-Location .\lightrag_webui
+uv run pytest tests/api tests/llm/gemini_impl tests/kg/postgres_impl tests/workspace -m offline --tb=short `
+  --ignore=tests/api/config/test_api_config_lollms_host.py `
+  --ignore=tests/api/config/test_embedding_dimension_guard.py `
+  --ignore=tests/api/config/test_ollama_embedding_dimension.py `
+  --ignore=tests/api/config/test_ollama_think_startup_validation.py
+Set-Location lightrag_webui
 bun run lint
 bun run test
-bun run build
+bun run build:vercel
 ```
 
-Some integration tests require external databases or model-provider credentials. Never commit `.env`, API keys, uploaded documents, or local index data.
+## Configuration and secrets
+
+- `.env.example` is the safe local template.
+- `.env.supabase.example` documents cloud-only values.
+- `.env` is ignored by Git and must never be committed.
+- `SUPABASE_SERVICE_ROLE_KEY`, database credentials, and `GEMINI_API_KEY` belong only on the backend.
+- Only `VITE_BACKEND_URL` belongs in Vercel. Every `VITE_*` value is visible to browsers.
+
+## Repository layout
+
+| Path | Purpose |
+| --- | --- |
+| `lightrag/` | FastAPI service, RAG engine, parsers, providers, and storage adapters |
+| `lightrag_webui/` | React/Vite operations console |
+| `tests/` | Backend and frontend regression coverage |
+| `deploy/supabase/` | Supabase database and bucket bootstrap SQL |
+| `docs/` | Architecture and deployment guides |
+| `Dockerfile`, `render.yaml` | Production backend image and Render blueprint |
+
+## Maintainer
+
+- **Harsh Singh** — AI Engineer / Software Developer
+- GitHub: [code-with-Harshchaudhary](https://github.com/code-with-Harshchaudhary)
+- LinkedIn: **[MY LINKEDIN URL]**
+- Email: **[MY EMAIL]**
+
+The LinkedIn and email values remain explicit placeholders because they were not provided.
 
 ## License
 
-The project is distributed under the MIT License. See [LICENSE](LightRAG-main/LICENSE) and [THIRD_PARTY_NOTICES.md](LightRAG-main/THIRD_PARTY_NOTICES.md).
+MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
