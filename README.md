@@ -29,7 +29,20 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the detailed request and st
 
 ## Run locally
 
-Requirements: Python 3.12, [uv](https://docs.astral.sh/uv/), [Bun](https://bun.sh/), and a Gemini API key.
+On Windows, the supported one-command start is:
+
+```powershell
+.\start-sentinel.cmd
+```
+
+It verifies the required tools, prepares the React interface, creates the
+runtime folders, and starts the API and bundled WebUI together. Open
+[http://127.0.0.1:9621/webui/](http://127.0.0.1:9621/webui/). Press `Ctrl+C`
+in the terminal to stop the project.
+
+### Manual development mode
+
+Requirements: Python 3.12, [uv](https://docs.astral.sh/uv/), Node.js LTS, and a Gemini API key. The Windows launcher uses `npx` to run the pinned Bun version, so a global Bun installation is not required.
 
 In PowerShell from the repository root:
 
@@ -38,8 +51,8 @@ Copy-Item .env.example .env
 notepad .env
 uv sync --extra api --extra postgres --extra pytest
 Set-Location lightrag_webui
-bun install --frozen-lockfile
-bun run dev
+npx --yes bun@1 install --frozen-lockfile
+npx --yes bun@1 run dev
 ```
 
 Put your real key in `.env` as `GEMINI_API_KEY=...`. Keep the frontend terminal open. In a second terminal, run:
@@ -49,7 +62,7 @@ Set-Location C:\Project_main\Sentinel-RAG-Ops
 uv run sentinel-rag-server --host 127.0.0.1 --port 9621
 ```
 
-Open [http://localhost:5173](http://localhost:5173). When prompted, enter the `LIGHTRAG_API_KEY` value from your local `.env`.
+Open [http://localhost:5173](http://localhost:5173). Local development without `AUTH_ACCOUNTS` enters guest mode automatically. A deployed API-key-protected backend uses the `LIGHTRAG_API_KEY` configured on Render.
 
 ### One-command Docker run
 

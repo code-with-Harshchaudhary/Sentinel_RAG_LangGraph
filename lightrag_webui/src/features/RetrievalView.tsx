@@ -3,12 +3,12 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { queryText, queryTextStream } from '@/api/lightrag'
-import { errorMessage } from '@/lib/utils'
+import { cn, errorMessage } from '@/lib/utils'
 import { useSettingsStore } from '@/stores/settings'
 import { useDebounce } from '@/hooks/useDebounce'
 import QuerySettings from '@/components/retrieval/QuerySettings'
 import { ChatMessage, MessageWithError } from '@/components/retrieval/ChatMessage'
-import { ChevronDownIcon, EraserIcon, SendIcon, CopyIcon, SquareIcon } from 'lucide-react'
+import { ChevronDownIcon, EraserIcon, SendIcon, CopyIcon, SquareIcon, SlidersHorizontalIcon, XIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 import { copyToClipboard } from '@/utils/clipboard'
@@ -147,6 +147,7 @@ export default function RetrievalView() {
   })
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   // Current retrieval pipeline step (e.g. "extracting_keywords") — shown to
   // the user while the query is in flight so they see live progress.
   const [queryProgress, setQueryProgress] = useState<string | null>(null)
@@ -968,12 +969,29 @@ export default function RetrievalView() {
   }, [t])
 
   return (
-    <div className="flex size-full gap-2 px-2 pb-12 overflow-hidden">
-      <div className="flex grow flex-col gap-4">
+    <div className="sentinel-retrieval flex size-full overflow-hidden">
+      <div className="sentinel-retrieval-main flex grow flex-col gap-3">
+        <div className="sentinel-retrieval-topbar">
+          <div>
+            <p className="sentinel-eyebrow">Retrieval workspace</p>
+            <h1>Ask your knowledge base</h1>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="sentinel-settings-trigger"
+            onClick={() => setSettingsOpen(true)}
+            aria-expanded={settingsOpen}
+            aria-controls="sentinel-retrieval-settings"
+          >
+            <SlidersHorizontalIcon />
+            Query controls
+          </Button>
+        </div>
         <div className="relative grow">
           <div
             ref={messagesContainerRef}
-            className="bg-primary-foreground/60 absolute inset-0 flex flex-col overflow-auto rounded-lg border p-2"
+            className="sentinel-answer-surface bg-primary-foreground/60 absolute inset-0 flex flex-col overflow-auto rounded-lg border p-4"
           >
             <div className="flex min-h-0 flex-1 flex-col gap-2">
               {messages.length === 0 ? (
@@ -1048,7 +1066,7 @@ export default function RetrievalView() {
 
         <form
           onSubmit={handleSubmit}
-          className="flex shrink-0 items-center gap-2"
+          className="sentinel-query-bar flex shrink-0 items-center gap-2"
           autoComplete="on"
           method="post"
           action="#"
@@ -1129,7 +1147,34 @@ export default function RetrievalView() {
           )}
         </form>
       </div>
-      <QuerySettings />
+      <button
+        type="button"
+        className={cn('sentinel-drawer-backdrop', settingsOpen && 'is-open')}
+        onClick={() => setSettingsOpen(false)}
+        aria-label="Close query controls"
+        tabIndex={settingsOpen ? 0 : -1}
+      />
+      <aside
+        id="sentinel-retrieval-settings"
+        className={cn('sentinel-retrieval-rail', settingsOpen && 'is-open')}
+        aria-label="Query controls"
+        aria-hidden={!settingsOpen}
+      >
+        {settingsOpen && (
+          <>
+            <div className="sentinel-drawer-heading">
+              <div>
+                <p className="sentinel-eyebrow">Fine tune retrieval</p>
+                <h2>Query controls</h2>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setSettingsOpen(false)} tooltip="Close controls">
+                <XIcon />
+              </Button>
+            </div>
+            <QuerySettings />
+          </>
+        )}
+      </aside>
     </div>
   )
 }

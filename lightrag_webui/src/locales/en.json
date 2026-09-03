@@ -207,7 +207,7 @@
     "fetchRetriesExhausted": "Failed to load graph data. Use refresh to try again.",
     "graphBuildFailed": "Failed to render graph data. Use refresh to retry.",
     "statusDialog": {
-      "title": "Sentry RAG Ops Server Settings",
+      "title": "Sentinel RAG Ops Server Settings",
       "description": "View current system status and connection information"
     },
     "legend": "Legend",

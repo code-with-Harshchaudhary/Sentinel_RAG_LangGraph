@@ -42,8 +42,9 @@ import { toast } from 'sonner'
 import { useBackendState } from '@/stores/state'
 import { copyToClipboard } from '@/utils/clipboard'
 
-import { RefreshCwIcon, ActivityIcon, ArrowUpIcon, ArrowDownIcon, RotateCcwIcon, CheckSquareIcon, XIcon, AlertTriangle, Info, CopyIcon } from 'lucide-react'
+import { RefreshCwIcon, ActivityIcon, ArrowUpIcon, ArrowDownIcon, RotateCcwIcon, CheckSquareIcon, XIcon, AlertTriangle, Info, CopyIcon, FileTextIcon, NetworkIcon, SparklesIcon, LibraryBigIcon } from 'lucide-react'
 import PipelineStatusDialog from '@/components/documents/PipelineStatusDialog'
+import KnowledgeGraphPreview from '@/components/sentinel/KnowledgeGraphPreview'
 import {
   getStatusBucket,
   getStatusRequestFilters,
@@ -78,6 +79,19 @@ const hasActiveDocumentsStatus = (counts: Record<string, number>): boolean =>
   getAggregateCount(counts, 'PROCESSING', 'processing', 'PARSING', 'parsing', 'ANALYZING', 'analyzing') > 0 ||
   getCountValue(counts, 'PENDING', 'pending') > 0 ||
   getCountValue(counts, 'PREPROCESSED', 'preprocessed') > 0
+
+const getStageProgress = (status: DocStatus): number => {
+  switch (status) {
+    case 'pending': return 10
+    case 'parsing': return 34
+    case 'preprocessed': return 48
+    case 'analyzing': return 62
+    case 'processing': return 82
+    case 'processed': return 100
+    case 'failed': return 100
+    default: return 0
+  }
+}
 
 const buildLegacyDocs = (documents: DocStatusResponse[]): DocsStatusesResponse => {
   const statuses = STATUS_BUCKETS.reduce<Record<StatusBucket, DocStatusResponse[]>>((acc, status) => {
@@ -393,6 +407,7 @@ export default function DocumentManager() {
   }, []);
 
   const [showPipelineStatus, setShowPipelineStatus] = useState(false)
+  const [showDocumentLibrary, setShowDocumentLibrary] = useState(false)
   const { t, i18n } = useTranslation()
   const health = useBackendState.use.health()
   const pipelineActive = useBackendState.use.pipelineActive()
@@ -1368,352 +1383,459 @@ export default function DocumentManager() {
     fetchPaginatedDocuments
   ]);
 
+  const totalDocuments = statusCounts.all || documentCounts.all || pagination.total_count
+  const activeDocuments = parseCount + analyzeCount + processCount
+  const pendingCount = getCountValue(statusCounts, 'PENDING', 'pending')
+  const currentChunkCount = currentPageDocs.reduce((sum, doc) => sum + (doc.chunks_count || 0), 0)
+  const weightedBuildTotal =
+    (completedCount * 100) +
+    (processCount * 82) +
+    (analyzeCount * 62) +
+    (parseCount * 34) +
+    (pendingCount * 10)
+  const buildProgress = totalDocuments > 0
+    ? Math.round(Math.min(100, weightedBuildTotal / totalDocuments))
+    : 0
+  const knowledgeReady = totalDocuments > 0 && activeDocuments === 0 && !pipelineActive
+  const buildState = pipelineActive || activeDocuments > 0
+    ? 'Building knowledge'
+    : knowledgeReady
+      ? 'Ready to query'
+      : 'Waiting for documents'
+
   return (
-    <Card className="!rounded-none !overflow-hidden flex flex-col h-full min-h-0">
-      <CardHeader className="py-2 px-6">
-        <CardTitle className="text-lg">{t('documentPanel.documentManager.title')}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 flex flex-col min-h-0 overflow-auto">
-        <div className="flex justify-between items-center gap-2 mb-2">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={scanDocuments}
-              side="bottom"
-              tooltip={t('documentPanel.documentManager.scanTooltip')}
-              size="sm"
-            >
-              <RefreshCwIcon /> {t('documentPanel.documentManager.scanButton')}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setShowPipelineStatus(true)}
-              side="bottom"
-              tooltip={t('documentPanel.documentManager.pipelineStatusTooltip')}
-              size="sm"
-              className={cn(
-                pipelineActive && 'pipeline-busy'
-              )}
-            >
-              <ActivityIcon /> {t('documentPanel.documentManager.pipelineStatusButton')}
-            </Button>
+    <Card className="sentinel-workspace !rounded-none !overflow-hidden flex flex-col h-full min-h-0">
+      <CardHeader className="py-5 px-6 pb-2">
+        <div className="flex items-end justify-between gap-4">
+          <div>
+            <p className="sentinel-eyebrow">Knowledge intake</p>
+            <CardTitle className="text-xl">{t('documentPanel.documentManager.title')}</CardTitle>
           </div>
-
-          {/* Pagination Controls in the middle */}
-          {pagination.total_pages > 1 && (
-            <PaginationControls
-              currentPage={pagination.page}
-              totalPages={pagination.total_pages}
-              pageSize={pagination.page_size}
-              totalCount={pagination.total_count}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              isLoading={isRefreshing}
-              compact={true}
-            />
-          )}
-
-          <div className="flex gap-2">
-            {isSelectionMode && (
-              <DeleteDocumentsDialog
-                selectedDocIds={selectedDocIds}
-                onDocumentsDeleted={handleDocumentsDeleted}
-              />
-            )}
-            {isSelectionMode && hasCurrentPageSelection ? (
-              (() => {
-                const buttonProps = getSelectionButtonProps();
-                const IconComponent = buttonProps.icon;
-                return (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={buttonProps.action}
-                    side="bottom"
-                    tooltip={buttonProps.text}
-                  >
-                    <IconComponent className="h-4 w-4" />
-                    {buttonProps.text}
-                  </Button>
-                );
-              })()
-            ) : !isSelectionMode ? (
-              <ClearDocumentsDialog onDocumentsCleared={handleDocumentsCleared} />
-            ) : null}
-            <UploadDocumentsDialog
-              onUploadBatchAccepted={() => startActivityProbe('upload')}
-              onDocumentsUploaded={async () => { refreshDocumentsThrottled() }}
-            />
-            <PipelineStatusDialog
-              open={showPipelineStatus}
-              onOpenChange={setShowPipelineStatus}
-            />
+          <div className="flex items-center gap-3">
+            <span className={cn('sentinel-live-status', (pipelineActive || activeDocuments > 0) && 'is-building')}>
+              <span aria-hidden="true" /> {buildState}
+            </span>
+            <Button type="button" variant="outline" size="sm" className="sentinel-library-trigger" onClick={() => setShowDocumentLibrary(true)}>
+              <LibraryBigIcon /> Manage documents
+            </Button>
           </div>
         </div>
-
-        <Card className="flex-1 flex flex-col border rounded-md min-h-0 mb-2">
-          <CardHeader className="flex-none py-2 px-4">
-            <div className="flex justify-between items-center">
-              <CardTitle>{t('documentPanel.documentManager.uploadedTitle')}</CardTitle>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-1" dir={i18n.dir()}>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'all' ? 'secondary' : 'outline'}
-                    onClick={() => handleStatusFilterChange('all')}
-                    disabled={isRefreshing}
-                    className={cn(
-                      statusFilter === 'all' && 'bg-gray-100 dark:bg-gray-900 font-medium border border-gray-400 dark:border-gray-500 shadow-sm'
-                    )}
-                  >
-                    {t('documentPanel.documentManager.filters.all')} ({statusCounts.all || documentCounts.all})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'completed' ? 'secondary' : 'outline'}
-                    onClick={() => handleStatusFilterChange('completed')}
-                    disabled={isRefreshing}
-                    className={cn(
-                      completedCount > 0 ? 'text-green-600' : 'text-gray-500',
-                      statusFilter === 'completed' && 'bg-green-100 dark:bg-green-900/30 font-medium border border-green-400 dark:border-green-600 shadow-sm'
-                    )}
-                  >
-                    {t('documentPanel.documentManager.filters.completed')} ({completedCount})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'parse' ? 'secondary' : 'outline'}
-                    onClick={() => handleStatusFilterChange('parse')}
-                    disabled={isRefreshing}
-                    className={cn(
-                      parseCount > 0 ? 'text-cyan-600' : 'text-gray-500',
-                      statusFilter === 'parse' && 'bg-cyan-100 dark:bg-cyan-900/30 font-medium border border-cyan-400 dark:border-cyan-600 shadow-sm'
-                    )}
-                  >
-                    {t('documentPanel.documentManager.filters.parse')} ({parseCount})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'analyze' ? 'secondary' : 'outline'}
-                    onClick={() => handleStatusFilterChange('analyze')}
-                    disabled={isRefreshing}
-                    className={cn(
-                      analyzeCount > 0 ? 'text-indigo-600' : 'text-gray-500',
-                      statusFilter === 'analyze' && 'bg-indigo-100 dark:bg-indigo-900/30 font-medium border border-indigo-400 dark:border-indigo-600 shadow-sm'
-                    )}
-                  >
-                    {t('documentPanel.documentManager.filters.analyze')} ({analyzeCount})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'process' ? 'secondary' : 'outline'}
-                    onClick={() => handleStatusFilterChange('process')}
-                    disabled={isRefreshing}
-                    className={cn(
-                      processCount > 0 ? 'text-blue-600' : 'text-gray-500',
-                      statusFilter === 'process' && 'bg-blue-100 dark:bg-blue-900/30 font-medium border border-blue-400 dark:border-blue-600 shadow-sm'
-                    )}
-                  >
-                    {t('documentPanel.documentManager.filters.process')} ({processCount})
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={statusFilter === 'failed' ? 'secondary' : 'outline'}
-                    onClick={() => handleStatusFilterChange('failed')}
-                    disabled={isRefreshing}
-                    className={cn(
-                      failedCount > 0 ? 'text-red-600' : 'text-gray-500',
-                      statusFilter === 'failed' && 'bg-red-100 dark:bg-red-900/30 font-medium border border-red-400 dark:border-red-600 shadow-sm'
-                    )}
-                  >
-                    {t('documentPanel.documentManager.filters.failed')} ({failedCount})
-                  </Button>
+      </CardHeader>
+      <CardContent className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
+        <section className="sentinel-dashboard" aria-label="Knowledge base overview">
+          <div className="sentinel-ingestion-column">
+            <div className="sentinel-intake-card">
+              <div className="sentinel-intake-copy">
+                <span className="sentinel-orbit" aria-hidden="true"><FileTextIcon /></span>
+                <div>
+                  <p className="sentinel-eyebrow">Starting machine</p>
+                  <h2>Start your knowledge base</h2>
+                  <p>Drop files here. Sentinel will upload, read, chunk, and build knowledge.</p>
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleManualRefresh}
-                  disabled={isRefreshing}
-                  side="bottom"
-                  tooltip={t('documentPanel.documentManager.refreshTooltip')}
-                >
-                  <RotateCcwIcon className="h-4 w-4" />
-                </Button>
               </div>
-              <div className="flex items-center gap-2">
-                <label
-                  htmlFor="toggle-filename-btn"
-                  className="text-sm text-gray-500"
-                >
-                  {t('documentPanel.documentManager.fileNameLabel')}
-                </label>
-                <Button
-                  id="toggle-filename-btn"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowFileName(!showFileName)}
-                  className="border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
-                >
-                  {showFileName
-                    ? t('documentPanel.documentManager.hideButton')
-                    : t('documentPanel.documentManager.showButton')
-                  }
-                </Button>
-              </div>
+              <UploadDocumentsDialog
+                inline
+                onUploadBatchAccepted={() => startActivityProbe('upload')}
+                onDocumentsUploaded={async () => { refreshDocumentsThrottled() }}
+              />
             </div>
-            <CardDescription aria-hidden="true" className="hidden">{t('documentPanel.documentManager.uploadedDescription')}</CardDescription>
-          </CardHeader>
+            <div className="sentinel-document-rack" aria-label="Recent document progress">
+              {filteredAndSortedDocs && filteredAndSortedDocs.length > 0 ? (
+                filteredAndSortedDocs.slice(0, 3).map((doc) => {
+                  const progress = getStageProgress(doc.status)
+                  const statusDisplay = getStatusDisplay(doc.status)
+                  return (
+                    <article className={cn('sentinel-document-card', doc.status === 'failed' && 'is-failed')} key={`rack-${doc.id}`}>
+                      <div className="sentinel-file-badge"><FileTextIcon /><span>{getDisplayFileName(doc).split('.').pop()?.slice(0, 4).toUpperCase() || 'DOC'}</span></div>
+                      <div className="sentinel-document-main">
+                        <div className="sentinel-document-title"><strong>{getDisplayFileName(doc, 46)}</strong><span>{doc.chunks_count || 0} chunks</span></div>
+                        <div className="sentinel-stage-labels"><span>Upload</span><span>Read</span><span>Chunk</span><span>Knowledge</span></div>
+                        <div className="sentinel-stage-track"><span style={{ width: `${progress}%` }} /></div>
+                      </div>
+                      <div className="sentinel-document-state"><strong>{progress}%</strong><span className={statusDisplay.className}>{t(statusDisplay.labelKey)}</span></div>
+                      <Checkbox
+                        checked={selectedDocIds.includes(doc.id)}
+                        onCheckedChange={(checked) => handleDocumentSelect(doc.id, checked === true)}
+                        aria-label={`Select ${getDisplayFileName(doc)}`}
+                      />
+                    </article>
+                  )
+                })
+              ) : (
+                <div className="sentinel-rack-empty">Uploaded documents and their live processing stages will appear here.</div>
+              )}
+            </div>
+          </div>
+          <div className="sentinel-build-card">
+            <div className="flex items-start justify-between gap-3">
+              <div><p className="sentinel-eyebrow">Knowledge build</p><h2><strong className="sentinel-build-percent">{buildProgress}%</strong> {buildState}</h2></div>
+              <SparklesIcon className={cn('size-5 text-cyan-300', (pipelineActive || activeDocuments > 0) && 'animate-pulse')} />
+            </div>
+            <div className={cn('sentinel-machine-track', (pipelineActive || activeDocuments > 0) && 'is-running')}><span style={{ width: `${buildProgress}%` }} /></div>
+            <div className="sentinel-metrics">
+              <div><FileTextIcon /><strong>{totalDocuments}</strong><span>documents</span></div>
+              <div><SparklesIcon /><strong>{currentChunkCount}</strong><span>chunks shown</span></div>
+              <div><ActivityIcon /><strong>{activeDocuments + pendingCount}</strong><span>active</span></div>
+              <div><AlertTriangle /><strong>{failedCount}</strong><span>failed</span></div>
+            </div>
+          </div>
+          <div className="sentinel-preview-card">
+            <div className="flex items-center justify-between"><div><p className="sentinel-eyebrow">Live preview</p><h2>Knowledge graph</h2></div><NetworkIcon className="size-5 text-fuchsia-300" /></div>
+            <KnowledgeGraphPreview active={knowledgeReady || pipelineActive || activeDocuments > 0} />
+            <button type="button" className="sentinel-ready-button" onClick={() => useSettingsStore.getState().setCurrentTab(knowledgeReady ? 'retrieval' : 'knowledge-graph')}>
+              {knowledgeReady ? 'Ready to query' : 'Open knowledge graph'} <span aria-hidden="true">→</span>
+            </button>
+          </div>
+        </section>
+        {showDocumentLibrary && (
+          <section className="sentinel-document-library" aria-label="Document library">
+            <div className="sentinel-library-heading">
+              <div>
+                <p className="sentinel-eyebrow">Document operations</p>
+                <h2>Manage uploaded documents</h2>
+              </div>
+              <Button type="button" variant="ghost" size="icon" onClick={() => setShowDocumentLibrary(false)} tooltip="Close document library">
+                <XIcon />
+              </Button>
+            </div>
+            <div className="flex justify-between items-center gap-2 mb-2">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={scanDocuments}
+                  side="bottom"
+                  tooltip={t('documentPanel.documentManager.scanTooltip')}
+                  size="sm"
+                >
+                  <RefreshCwIcon /> {t('documentPanel.documentManager.scanButton')}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowPipelineStatus(true)}
+                  side="bottom"
+                  tooltip={t('documentPanel.documentManager.pipelineStatusTooltip')}
+                  size="sm"
+                  className={cn(
+                    pipelineActive && 'pipeline-busy'
+                  )}
+                >
+                  <ActivityIcon /> {t('documentPanel.documentManager.pipelineStatusButton')}
+                </Button>
+              </div>
 
-          <CardContent className="min-h-0 flex-1 relative p-0" ref={cardContentRef}>
-            {!docs && (
-              <div className="absolute inset-0 min-h-0 p-0">
-                <EmptyCard
-                  title={t('documentPanel.documentManager.emptyTitle')}
-                  description={t('documentPanel.documentManager.emptyDescription')}
+              {/* Pagination Controls in the middle */}
+              {pagination.total_pages > 1 && (
+                <PaginationControls
+                  currentPage={pagination.page}
+                  totalPages={pagination.total_pages}
+                  pageSize={pagination.page_size}
+                  totalCount={pagination.total_count}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handlePageSizeChange}
+                  isLoading={isRefreshing}
+                  compact={true}
+                />
+              )}
+
+              <div className="flex gap-2">
+                {isSelectionMode && (
+                  <DeleteDocumentsDialog
+                    selectedDocIds={selectedDocIds}
+                    onDocumentsDeleted={handleDocumentsDeleted}
+                  />
+                )}
+                {isSelectionMode && hasCurrentPageSelection ? (
+                  (() => {
+                    const buttonProps = getSelectionButtonProps();
+                    const IconComponent = buttonProps.icon;
+                    return (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={buttonProps.action}
+                        side="bottom"
+                        tooltip={buttonProps.text}
+                      >
+                        <IconComponent className="h-4 w-4" />
+                        {buttonProps.text}
+                      </Button>
+                    );
+                  })()
+                ) : !isSelectionMode ? (
+                  <ClearDocumentsDialog onDocumentsCleared={handleDocumentsCleared} />
+                ) : null}
+                <PipelineStatusDialog
+                  open={showPipelineStatus}
+                  onOpenChange={setShowPipelineStatus}
                 />
               </div>
-            )}
-            {docs && (
-              <div className="absolute inset-0 flex min-h-0 flex-col p-0">
-                <div className="absolute inset-[-1px] flex flex-col p-0 border rounded-md border-gray-200 dark:border-gray-700 overflow-hidden">
-                  <TooltipProvider>
-                    <Table className="w-full">
-                      <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
-                        <TableRow className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
-                          <TableHead
-                            onClick={() => handleSort('id')}
-                            className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
-                          >
-                            <div className="flex items-center">
-                              {showFileName
-                                ? t('documentPanel.documentManager.columns.fileName')
-                                : t('documentPanel.documentManager.columns.id')
-                              }
-                              {((sortField === 'id' && !showFileName) || (sortField === 'file_path' && showFileName)) && (
-                                <span className="ml-1">
-                                  {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
-                                </span>
-                              )}
-                            </div>
-                          </TableHead>
-                          <TableHead>{t('documentPanel.documentManager.columns.summary')}</TableHead>
-                          <TableHead>{t('documentPanel.documentManager.columns.status')}</TableHead>
-                          <TableHead>{t('documentPanel.documentManager.columns.length')}</TableHead>
-                          <TableHead>{t('documentPanel.documentManager.columns.chunks')}</TableHead>
-                          <TableHead
-                            onClick={() => handleSort('created_at')}
-                            className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
-                          >
-                            <div className="flex items-center">
-                              {t('documentPanel.documentManager.columns.created')}
-                              {sortField === 'created_at' && (
-                                <span className="ml-1">
-                                  {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
-                                </span>
-                              )}
-                            </div>
-                          </TableHead>
-                          <TableHead
-                            onClick={() => handleSort('updated_at')}
-                            className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
-                          >
-                            <div className="flex items-center">
-                              {t('documentPanel.documentManager.columns.updated')}
-                              {sortField === 'updated_at' && (
-                                <span className="ml-1">
-                                  {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
-                                </span>
-                              )}
-                            </div>
-                          </TableHead>
-                          <TableHead className="w-16 text-center">
-                            {t('documentPanel.documentManager.columns.select')}
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody className="text-sm overflow-auto">
-                        {filteredAndSortedDocs && filteredAndSortedDocs.map((doc) => (
-                          <TableRow key={doc.id}>
-                            <TableCell className="truncate font-mono overflow-visible max-w-[250px]">
-                              {showFileName ? (
-                                <>
+            </div>
+
+            <Card className="flex-1 flex flex-col border rounded-md min-h-0 mb-2">
+              <CardHeader className="flex-none py-2 px-4">
+                <div className="flex justify-between items-center">
+                  <CardTitle>{t('documentPanel.documentManager.uploadedTitle')}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <div className="flex gap-1" dir={i18n.dir()}>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === 'all' ? 'secondary' : 'outline'}
+                        onClick={() => handleStatusFilterChange('all')}
+                        disabled={isRefreshing}
+                        className={cn(
+                          statusFilter === 'all' && 'bg-gray-100 dark:bg-gray-900 font-medium border border-gray-400 dark:border-gray-500 shadow-sm'
+                        )}
+                      >
+                        {t('documentPanel.documentManager.filters.all')} ({statusCounts.all || documentCounts.all})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === 'completed' ? 'secondary' : 'outline'}
+                        onClick={() => handleStatusFilterChange('completed')}
+                        disabled={isRefreshing}
+                        className={cn(
+                          completedCount > 0 ? 'text-green-600' : 'text-gray-500',
+                          statusFilter === 'completed' && 'bg-green-100 dark:bg-green-900/30 font-medium border border-green-400 dark:border-green-600 shadow-sm'
+                        )}
+                      >
+                        {t('documentPanel.documentManager.filters.completed')} ({completedCount})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === 'parse' ? 'secondary' : 'outline'}
+                        onClick={() => handleStatusFilterChange('parse')}
+                        disabled={isRefreshing}
+                        className={cn(
+                          parseCount > 0 ? 'text-cyan-600' : 'text-gray-500',
+                          statusFilter === 'parse' && 'bg-cyan-100 dark:bg-cyan-900/30 font-medium border border-cyan-400 dark:border-cyan-600 shadow-sm'
+                        )}
+                      >
+                        {t('documentPanel.documentManager.filters.parse')} ({parseCount})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === 'analyze' ? 'secondary' : 'outline'}
+                        onClick={() => handleStatusFilterChange('analyze')}
+                        disabled={isRefreshing}
+                        className={cn(
+                          analyzeCount > 0 ? 'text-indigo-600' : 'text-gray-500',
+                          statusFilter === 'analyze' && 'bg-indigo-100 dark:bg-indigo-900/30 font-medium border border-indigo-400 dark:border-indigo-600 shadow-sm'
+                        )}
+                      >
+                        {t('documentPanel.documentManager.filters.analyze')} ({analyzeCount})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === 'process' ? 'secondary' : 'outline'}
+                        onClick={() => handleStatusFilterChange('process')}
+                        disabled={isRefreshing}
+                        className={cn(
+                          processCount > 0 ? 'text-blue-600' : 'text-gray-500',
+                          statusFilter === 'process' && 'bg-blue-100 dark:bg-blue-900/30 font-medium border border-blue-400 dark:border-blue-600 shadow-sm'
+                        )}
+                      >
+                        {t('documentPanel.documentManager.filters.process')} ({processCount})
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={statusFilter === 'failed' ? 'secondary' : 'outline'}
+                        onClick={() => handleStatusFilterChange('failed')}
+                        disabled={isRefreshing}
+                        className={cn(
+                          failedCount > 0 ? 'text-red-600' : 'text-gray-500',
+                          statusFilter === 'failed' && 'bg-red-100 dark:bg-red-900/30 font-medium border border-red-400 dark:border-red-600 shadow-sm'
+                        )}
+                      >
+                        {t('documentPanel.documentManager.filters.failed')} ({failedCount})
+                      </Button>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleManualRefresh}
+                      disabled={isRefreshing}
+                      side="bottom"
+                      tooltip={t('documentPanel.documentManager.refreshTooltip')}
+                    >
+                      <RotateCcwIcon className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <label
+                      htmlFor="toggle-filename-btn"
+                      className="text-sm text-gray-500"
+                    >
+                      {t('documentPanel.documentManager.fileNameLabel')}
+                    </label>
+                    <Button
+                      id="toggle-filename-btn"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowFileName(!showFileName)}
+                      className="border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    >
+                      {showFileName
+                        ? t('documentPanel.documentManager.hideButton')
+                        : t('documentPanel.documentManager.showButton')
+                      }
+                    </Button>
+                  </div>
+                </div>
+                <CardDescription aria-hidden="true" className="hidden">{t('documentPanel.documentManager.uploadedDescription')}</CardDescription>
+              </CardHeader>
+
+              <CardContent className="min-h-0 flex-1 relative p-0" ref={cardContentRef}>
+                {!docs && (
+                  <div className="absolute inset-0 min-h-0 p-0">
+                    <EmptyCard
+                      title={t('documentPanel.documentManager.emptyTitle')}
+                      description={t('documentPanel.documentManager.emptyDescription')}
+                    />
+                  </div>
+                )}
+                {docs && (
+                  <div className="absolute inset-0 flex min-h-0 flex-col p-0">
+                    <div className="absolute inset-[-1px] flex flex-col p-0 border rounded-md border-gray-200 dark:border-gray-700 overflow-hidden">
+                      <TooltipProvider>
+                        <Table className="w-full">
+                          <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
+                            <TableRow className="border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/75 shadow-[inset_0_-1px_0_rgba(0,0,0,0.1)]">
+                              <TableHead
+                                onClick={() => handleSort('id')}
+                                className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
+                              >
+                                <div className="flex items-center">
+                                  {showFileName
+                                    ? t('documentPanel.documentManager.columns.fileName')
+                                    : t('documentPanel.documentManager.columns.id')
+                                  }
+                                  {((sortField === 'id' && !showFileName) || (sortField === 'file_path' && showFileName)) && (
+                                    <span className="ml-1">
+                                      {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead>{t('documentPanel.documentManager.columns.summary')}</TableHead>
+                              <TableHead>{t('documentPanel.documentManager.columns.status')}</TableHead>
+                              <TableHead>{t('documentPanel.documentManager.columns.length')}</TableHead>
+                              <TableHead>{t('documentPanel.documentManager.columns.chunks')}</TableHead>
+                              <TableHead
+                                onClick={() => handleSort('created_at')}
+                                className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
+                              >
+                                <div className="flex items-center">
+                                  {t('documentPanel.documentManager.columns.created')}
+                                  {sortField === 'created_at' && (
+                                    <span className="ml-1">
+                                      {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead
+                                onClick={() => handleSort('updated_at')}
+                                className="cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 select-none"
+                              >
+                                <div className="flex items-center">
+                                  {t('documentPanel.documentManager.columns.updated')}
+                                  {sortField === 'updated_at' && (
+                                    <span className="ml-1">
+                                      {sortDirection === 'asc' ? <ArrowUpIcon size={14} /> : <ArrowDownIcon size={14} />}
+                                    </span>
+                                  )}
+                                </div>
+                              </TableHead>
+                              <TableHead className="w-16 text-center">
+                                {t('documentPanel.documentManager.columns.select')}
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody className="text-sm overflow-auto">
+                            {filteredAndSortedDocs && filteredAndSortedDocs.map((doc) => (
+                              <TableRow key={doc.id}>
+                                <TableCell className="truncate font-mono overflow-visible max-w-[250px]">
+                                  {showFileName ? (
+                                    <>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="truncate">
+                                            {getDisplayFileName(doc, 30)}
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top" className="max-w-2xl">
+                                          {doc.file_path}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                      <div className="text-xs text-gray-500">{doc.id}</div>
+                                    </>
+                                  ) : (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <div className="truncate">
+                                          {doc.id}
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="max-w-2xl">
+                                        {doc.file_path}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </TableCell>
+                                <TableCell className="max-w-xs min-w-45 truncate overflow-visible">
                                   <Tooltip>
                                     <TooltipTrigger asChild>
                                       <div className="truncate">
-                                        {getDisplayFileName(doc, 30)}
+                                        {doc.content_summary}
                                       </div>
                                     </TooltipTrigger>
                                     <TooltipContent side="top" className="max-w-2xl">
-                                      {doc.file_path}
+                                      {doc.content_summary}
                                     </TooltipContent>
                                   </Tooltip>
-                                  <div className="text-xs text-gray-500">{doc.id}</div>
-                                </>
-                              ) : (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="truncate">
-                                      {doc.id}
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-2xl">
-                                    {doc.file_path}
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                            </TableCell>
-                            <TableCell className="max-w-xs min-w-45 truncate overflow-visible">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="truncate">
-                                    {doc.content_summary}
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="max-w-2xl">
-                                  {doc.content_summary}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center">
-                                {(() => {
-                                  const statusDisplay = getStatusDisplay(doc.status)
-                                  return (
-                                    <span className={statusDisplay.className}>
-                                      {t(statusDisplay.labelKey)}
-                                    </span>
-                                  )
-                                })()}
+                                </TableCell>
+                                <TableCell>
+                                  <div className="flex items-center">
+                                    {(() => {
+                                      const statusDisplay = getStatusDisplay(doc.status)
+                                      return (
+                                        <span className={statusDisplay.className}>
+                                          {t(statusDisplay.labelKey)}
+                                        </span>
+                                      )
+                                    })()}
 
-                                {hasDocumentDetails(doc) && <DocumentStatusDetailsDialog doc={doc} />}
-                              </div>
-                            </TableCell>
-                            <TableCell>{doc.content_length ?? '-'}</TableCell>
-                            <TableCell>{doc.chunks_count ?? '-'}</TableCell>
-                            <TableCell className="truncate">
-                              {new Date(doc.created_at).toLocaleString()}
-                            </TableCell>
-                            <TableCell className="truncate">
-                              {new Date(doc.updated_at).toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Checkbox
-                                checked={selectedDocIds.includes(doc.id)}
-                                onCheckedChange={(checked) => handleDocumentSelect(doc.id, checked === true)}
-                                // disabled={doc.status !== 'processed'}
-                                className="mx-auto"
-                              />
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TooltipProvider>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                                    {hasDocumentDetails(doc) && <DocumentStatusDetailsDialog doc={doc} />}
+                                  </div>
+                                </TableCell>
+                                <TableCell>{doc.content_length ?? '-'}</TableCell>
+                                <TableCell>{doc.chunks_count ?? '-'}</TableCell>
+                                <TableCell className="truncate">
+                                  {new Date(doc.created_at).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="truncate">
+                                  {new Date(doc.updated_at).toLocaleString()}
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  <Checkbox
+                                    checked={selectedDocIds.includes(doc.id)}
+                                    onCheckedChange={(checked) => handleDocumentSelect(doc.id, checked === true)}
+                                    // disabled={doc.status !== 'processed'}
+                                    className="mx-auto"
+                                  />
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TooltipProvider>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </section>
+        )}
       </CardContent>
     </Card>
   )

@@ -22,11 +22,13 @@ import {
 import { errorMessage } from '@/lib/utils'
 import { getSupportedFileTypes, uploadDocument } from '@/api/lightrag'
 
-import { UploadIcon } from 'lucide-react'
+import { FilePlus2Icon, UploadIcon } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 interface UploadDocumentsDialogProps {
   onDocumentsUploaded?: () => Promise<void>
+  /** Render the real dropzone directly in a page instead of inside a dialog. */
+  inline?: boolean
   /**
    * Fired once per batch as soon as the first file is accepted by the server.
    * Lets the parent start its activity probe as early as possible (rather
@@ -37,20 +39,24 @@ interface UploadDocumentsDialogProps {
 
 export default function UploadDocumentsDialog({
   onDocumentsUploaded,
-  onUploadBatchAccepted
+  onUploadBatchAccepted,
+  inline = false
 }: UploadDocumentsDialogProps) {
   const { t } = useTranslation()
   const [open, setOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [progresses, setProgresses] = useState<Record<string, number>>({})
   const [fileErrors, setFileErrors] = useState<Record<string, string>>({})
-  const [fileTypes, setFileTypes] = useState<FileTypesState>({ status: 'idle' })
+  const [fileTypes, setFileTypes] = useState<FileTypesState>(
+    inline ? { status: 'loading' } : { status: 'idle' }
+  )
+  const uploadSurfaceActive = inline || open
 
   // Fetch the live allowlist + engine capability matrix while the dialog is
   // open. `loading` is entered synchronously in onOpenChange (not here) so
   // the very first open render already has the uploader disabled.
   useEffect(() => {
-    if (!open) return
+    if (!uploadSurfaceActive) return
     const controller = new AbortController()
     getSupportedFileTypes(controller.signal)
       .then((res) => {
@@ -66,7 +72,7 @@ export default function UploadDocumentsDialog({
         setFileTypes({ status: 'fallback' })
       })
     return () => controller.abort()
-  }, [open])
+  }, [uploadSurfaceActive])
 
   const handleRejectedFiles = useCallback(
     (rejectedFiles: FileRejection[]) => {
@@ -241,6 +247,29 @@ export default function UploadDocumentsDialog({
 
   const uploaderInputs = deriveUploaderInputs(fileTypes)
 
+  const uploader = (
+    <FileUploader
+      maxFileCount={Infinity}
+      maxSize={200 * 1024 * 1024}
+      description={t('documentPanel.uploadDocuments.fileTypes', {
+        types: formatFileTypesLabel(
+          uploaderInputs.acceptedExtensions ?? flattenAcceptExtensions(supportedFileTypes)
+        )
+      })}
+      onUpload={handleDocumentsUpload}
+      onReject={handleRejectedFiles}
+      progresses={progresses}
+      fileErrors={fileErrors}
+      disabled={isUploading || uploaderInputs.disabled}
+      acceptedExtensions={uploaderInputs.acceptedExtensions}
+      engineCapabilities={uploaderInputs.engineCapabilities}
+    />
+  )
+
+  if (inline) {
+    return <div className="sentinel-inline-uploader">{uploader}</div>
+  }
+
   return (
     <Dialog
       open={open}
@@ -262,33 +291,18 @@ export default function UploadDocumentsDialog({
       }}
     >
       <DialogTrigger asChild>
-        <Button variant="default" side="bottom" tooltip={t('documentPanel.uploadDocuments.tooltip')} size="sm">
+        <Button variant="default" side="bottom" tooltip={t('documentPanel.uploadDocuments.tooltip')} size="sm" className="sentinel-upload-button">
           <UploadIcon /> {t('documentPanel.uploadDocuments.button')}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-xl" onCloseAutoFocus={(e) => e.preventDefault()}>
+      <DialogContent className="sentinel-upload-dialog sm:max-w-xl" onCloseAutoFocus={(e) => e.preventDefault()}>
         <DialogHeader>
-          <DialogTitle>{t('documentPanel.uploadDocuments.title')}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><FilePlus2Icon className="text-emerald-400" />{t('documentPanel.uploadDocuments.title')}</DialogTitle>
           <DialogDescription>
             {t('documentPanel.uploadDocuments.description')}
           </DialogDescription>
         </DialogHeader>
-        <FileUploader
-          maxFileCount={Infinity}
-          maxSize={200 * 1024 * 1024}
-          description={t('documentPanel.uploadDocuments.fileTypes', {
-            types: formatFileTypesLabel(
-              uploaderInputs.acceptedExtensions ?? flattenAcceptExtensions(supportedFileTypes)
-            )
-          })}
-          onUpload={handleDocumentsUpload}
-          onReject={handleRejectedFiles}
-          progresses={progresses}
-          fileErrors={fileErrors}
-          disabled={isUploading || uploaderInputs.disabled}
-          acceptedExtensions={uploaderInputs.acceptedExtensions}
-          engineCapabilities={uploaderInputs.engineCapabilities}
-        />
+        {uploader}
       </DialogContent>
     </Dialog>
   )

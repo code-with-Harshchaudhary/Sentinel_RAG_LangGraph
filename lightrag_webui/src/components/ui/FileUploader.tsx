@@ -329,9 +329,10 @@ function FileUploader(props: FileUploaderProps) {
           <div
             {...getRootProps()}
             className={cn(
+              'sentinel-dropzone',
               'group border-muted-foreground/25 hover:bg-muted/25 relative grid h-52 w-full cursor-pointer place-items-center rounded-lg border-2 border-dashed px-5 py-2.5 text-center transition',
               'ring-offset-background focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
-              isDragActive && 'border-muted-foreground/50',
+              isDragActive && 'border-muted-foreground/50 sentinel-dropzone-active',
               isDisabled && 'pointer-events-none opacity-60',
               className
             )}
@@ -425,7 +426,7 @@ interface FileCardProps {
 function FileCard({ file, progress, error, onRemove }: FileCardProps) {
   const { t } = useTranslation()
   return (
-    <div className="relative flex items-center gap-2.5">
+    <div className="sentinel-file-card relative flex items-center gap-2.5">
       <div className="flex flex-1 gap-2.5">
         {error ? (
           <FileText className="text-red-400 size-10" aria-hidden="true" />
