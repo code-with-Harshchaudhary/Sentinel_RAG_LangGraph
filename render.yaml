@@ -6,81 +6,118 @@ services:
     dockerfilePath: ./Dockerfile
     dockerContext: .
     healthCheckPath: /health
-    maxShutdownDelaySeconds: 120
+
     envVars:
       - key: HOST
         value: 0.0.0.0
+
       - key: ENABLE_API_DOCS
         value: "false"
+
       - key: WORKSPACE
         value: sentinel_rag_ops
+
       - key: WORKING_DIR
         value: /app/data/rag_storage
+
       - key: INPUT_DIR
         value: /app/data/inputs
+
       - key: PROMPT_DIR
         value: /app/data/prompts
+
       - key: LLM_BINDING
         value: gemini
+
       - key: LLM_BINDING_HOST
         value: DEFAULT_GEMINI_ENDPOINT
+
       - key: LLM_MODEL
         value: gemini-3.1-flash-lite
+
       - key: MAX_ASYNC_LLM
         value: "1"
+
       - key: EMBEDDING_BINDING
         value: gemini
+
       - key: EMBEDDING_BINDING_HOST
         value: DEFAULT_GEMINI_ENDPOINT
+
       - key: EMBEDDING_MODEL
         value: gemini-embedding-001
+
       - key: EMBEDDING_DIM
         value: "1536"
+
       - key: RERANK_BINDING
         value: "null"
+
       - key: LIGHTRAG_KV_STORAGE
         value: PGKVStorage
+
       - key: LIGHTRAG_VECTOR_STORAGE
         value: PGVectorStorage
+
       - key: LIGHTRAG_GRAPH_STORAGE
         value: PGTableGraphStorage
+
       - key: LIGHTRAG_DOC_STATUS_STORAGE
         value: PGDocStatusStorage
+
       - key: POSTGRES_PORT
         value: "5432"
+
       - key: POSTGRES_DATABASE
         value: postgres
+
       - key: POSTGRES_SSL_MODE
         value: require
+
       - key: POSTGRES_MAX_CONNECTIONS
         value: "5"
+
       - key: POSTGRES_VECTOR_INDEX_TYPE
         value: HNSW
+
       - key: SUPABASE_STORAGE_ENABLED
         value: "true"
+
       - key: SUPABASE_STORAGE_BUCKET
         value: sentinel-documents
+
       - key: SUPABASE_STORAGE_PREFIX
         value: documents
+
       - key: LIGHTRAG_PARSER
         value: "*:legacy-R"
+
       - key: MAX_PARALLEL_INSERT
         value: "1"
+
       - key: ENABLE_LLM_CACHE
         value: "false"
+
       - key: LIGHTRAG_API_KEY
         generateValue: true
+
       - key: GEMINI_API_KEY
         sync: false
+
       - key: POSTGRES_HOST
         sync: false
+
       - key: POSTGRES_USER
         sync: false
+
       - key: POSTGRES_PASSWORD
         sync: false
+
       - key: SUPABASE_URL
         sync: false
+
       - key: SUPABASE_SERVICE_ROLE_KEY
         sync: false
+
       - key: CORS_ORIGINS
         sync: false
