@@ -4,7 +4,7 @@
 
 ## 🌐 Live Website
 
-### [🚀 Open Sentinel RAG Ops](https://your-rag-website-url.com)
+### [https://sentry-rag.vercel.app/]
 
 > **Try the live application:** upload documents, ask questions, explore knowledge graphs, and manage document-processing workflows from one interface.
 
